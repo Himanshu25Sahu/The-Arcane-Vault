@@ -1,25 +1,23 @@
 import { GameEngine } from './engine.js';
 import { EntityType, GameState, Position } from './types.js';
 import * as readline from 'readline';
-const fsPromise = import('fs');
-
-// Importing UI components to keep the main file clean
+import { writeFileSync, readFileSync } from 'fs';
 import { printIntro, printGrid } from './ui.js';
 
-// === RANDOM POSITION HELPER ===
+// helper to find a free spot on  the grid
 function randomPos(exclude: Position[] = []): Position {
-    const excluded = new Set<string>();
-    exclude.forEach(p => excluded.add(`${p.x},${p.y}`));
-    
-    // Always exclude player start and gate
-    excluded.add('0,0');
-    excluded.add('4,4');
+    // Helper to check if a coordinate is already taken
+    const isOccupied = (x: number, y: number) => {
+        if (x === 0 && y === 0) return true; // player start
+        if (x === 4 && y === 4) return true; // gate
+        return exclude.some(p => p.x === x && p.y === y);
+    };
 
     let x: number, y: number;
     do {
         x = Math.floor(Math.random() * 5);
         y = Math.floor(Math.random() * 5);
-    } while (excluded.has(`${x},${y}`));
+    } while (isOccupied(x, y)); // Check against our helper function
 
     return { x, y };
 }
@@ -28,7 +26,7 @@ function randomPos(exclude: Position[] = []): Position {
 const keyPos = randomPos();
 const potionPos = randomPos([keyPos]); // Don't spawn potion on key
 
-// === STARTING STATE WITH RANDOM POSITIONS ===
+// initial game setup
 const STARTING_STATE: GameState = {
     player: { pos: { x: 0, y: 0 }, health: 100, energy: 15, inventory: [] },
     world: {
@@ -62,6 +60,7 @@ function printMinimalStatus() {
     printGrid(state);
 }
 
+
 // === MAIN GAME LOOP ===
 async function askMove() {
     printMinimalStatus();
@@ -69,57 +68,53 @@ async function askMove() {
     rl.question('\n> Your move: ', (input) => {
         const cmd = input.trim().toLowerCase();
 
+        // 1. Handle Meta Commands
         if (cmd === 'quit') {
             console.log("\nThanks for playing The Arcane Vault! 👋\n");
             rl.close();
-            return;
-        }
-
-        if (cmd === 'use potion') {
-            try {
-                engine.useItem(EntityType.POTION);
-            } catch (e: any) {
-                console.log(`❌ ${e.message}`);
-            }
-            askMove();
-            return;
-        }
-
-        if (cmd === 'save') {
-            fsPromise.then(fs => {
-                fs.writeFileSync('save.json', engine.saveState(), 'utf8');
-                console.log('💾 Game saved to save.json');
-            }).catch(() => {
-                console.log('❌ Failed to save.');
-            });
-            askMove();
-            return;
-        }
-
-        if (cmd === 'load') {
-            fsPromise.then(fs => {
-                try {
-                    const data = fs.readFileSync('save.json', 'utf8');
-                    engine.loadState(data);
-                    console.log('📂 Game loaded successfully!');
-                } catch (e) {
-                    console.log('❌ No save file found or failed to load.');
-                }
-            }).catch(() => {
-                console.log('❌ Failed to access file system.');
-            });
-            askMove();
-            return;
+            return; // Stop the loop
         }
 
         if (cmd === 'reset') {
             engine.reset();
-            console.log('🔄 Reset!');
-            askMove();
-            return;
+            console.log('\n🔄 Game state reset to start!');
+            return askMove(); // Restart loop
         }
 
-        // Directional moves
+        if (cmd === 'save') {
+            try {
+                writeFileSync('save.json', engine.saveState(), 'utf8'); 
+                console.log('\n💾 Game saved successfully!');
+            } catch (error) {
+                console.log('\n❌ Failed to save.');
+            }
+            return askMove();
+        }
+
+        if (cmd === 'load') {
+            try {
+                const data = readFileSync('save.json', 'utf8');
+                engine.loadState(data);
+                console.log('\n📂 Game loaded successfully!');
+            } catch (e: any) {
+                
+                console.log(`\n❌ ${e.message || 'No save file found.'}`);
+            }
+            return askMove();
+        }
+        
+        // 2. Handle Gameplay Commands
+        if (cmd === 'use potion') {
+            try {
+                const msg = engine.useItem(EntityType.POTION);
+                console.log(`\n🧪 ${msg}`);
+            } catch (e: any) {
+                console.log(`\n❌ ${e.message}`);
+            }
+            return askMove();
+        }
+
+        // 3. Handle Movement
         const moves: { [key: string]: { dx: number; dy: number } } = {
             u: { dx: 0, dy: -1 },
             d: { dx: 0, dy: 1 },
@@ -129,15 +124,27 @@ async function askMove() {
 
         if (cmd in moves) {
             const { dx, dy } = moves[cmd];
-            const newX = engine.getState().player.pos.x + dx;
-            const newY = engine.getState().player.pos.y + dy;
+            const state = engine.getState();
+            const newX = state.player.pos.x + dx;
+            const newY = state.player.pos.y + dy;
+
             try {
-                engine.movePlayer(newX, newY);
+                const result = engine.movePlayer(newX, newY);
+                console.log(`\n✨ ${result.message}`);
+                
+                if (result.won) {
+                    printMinimalStatus();
+                    console.log("\n🎉 VICTORY! You escaped the Vault! 🏆\n");
+                    rl.close();
+                    return;
+                }
             } catch (e: any) {
-                console.log(`❌ ${e.message}`);
+                console.log(`\n❌ ${e.message}`);
             }
+            return askMove();
         } else {
-            console.log("❓ Invalid command. Use: U/D/L/R or full commands.");
+            console.log("\n❓ Invalid command. Use: U/D/L/R, 'use potion', 'save', 'load', or 'reset'.");
+            askMove();
         }
 
         askMove();

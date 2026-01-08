@@ -12,13 +12,30 @@ export class GameEngine {
     }
 
     public movePlayer(newX: number, newY: number): void {
-        // Requirement: Edge Case Handling (Boundary Check)
-        if (newX < 0 || newX >= this.state.world.gridSize || newY < 0 || newY >= this.state.world.gridSize) {
-            console.warn("Invalid move: Out of bounds.");
+        const currentX = this.state.player.pos.x;
+        const currentY = this.state.player.pos.y;
+
+        // Adjacent check: Only up/down/left/right (Manhattan distance == 1)
+        const dx = Math.abs(newX - currentX);
+        const dy = Math.abs(newY - currentY);
+        if (dx + dy !== 1) {
+            throw new Error('Invalid move: Can only move to adjacent cell (up/down/left/right)');
+        }
+
+        // Energy check
+        if (this.state.player.energy <= 0) {
+            throw new Error('No energy left! Rest with potion.');
             return;
         }
 
+        // Bounds check
+        if (newX < 0 || newX >= this.state.world.gridSize || newY < 0 || newY >= this.state.world.gridSize) {
+            throw new Error('Out of bounds!');
+        }
+
         this.state.player.pos = { x: newX, y: newY };
+        this.state.player.energy -= 1;
+        console.log(`\nMoved to (${newX}, ${newY}) | Energy left: ${this.state.player.energy}`);
         this.checkCollisions();
     }
 
@@ -96,7 +113,9 @@ export class GameEngine {
         this.state.player.inventory.splice(index, 1);
 
         if (itemType === EntityType.POTION) {
-            this.state.player.health = Math.min(100, this.state.player.health + 30);
+            this.state.player.health = Math.min(100, this.state.player.health + 20);
+            this.state.player.energy = Math.min(15, this.state.player.energy + 8);
+            console.log("You drink the potion. Health +20, Energy +8!");
         }
         // Rationale: Consumable items like potion; extensible to more effects (e.g., key not consumable)
     }

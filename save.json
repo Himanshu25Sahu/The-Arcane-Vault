@@ -1,0 +1,1 @@
+{"player":{"pos":{"x":2,"y":2},"health":100,"energy":11,"inventory":["POTION"]},"world":{"gridSize":5,"isGateOpen":false,"entities":[{"id":"k1","type":"KEY","pos":{"x":3,"y":4},"collected":false},{"id":"p1","type":"POTION","pos":{"x":2,"y":2},"collected":true},{"id":"gate","type":"GATE","pos":{"x":4,"y":4},"collected":false}]}}

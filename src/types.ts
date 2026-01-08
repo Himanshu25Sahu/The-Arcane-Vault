@@ -18,6 +18,7 @@ export interface GameState {
         pos: Position;
         health: number;
         inventory: string[];
+        energy: number;
     };
     world: {
         gridSize: number;

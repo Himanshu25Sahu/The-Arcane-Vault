@@ -55,7 +55,9 @@ function printMinimalStatus() {
     console.log(`🎒 Inventory: ${state.player.inventory.join(', ') || 'empty'}`);
     console.log(`🚪 Gate: ${state.world.isGateOpen ? 'Unlocked ◉' : 'Locked ◈'}`);
     console.log('\nMove: U/D/L/R  |  Other: use potion, save, load, reset, quit');
-
+    if (state.player.energy === 0 && !state.player.inventory.includes(EntityType.POTION)) {
+        console.log("\n💀 OUT OF ENERGY! You are stranded in the vault. Type 'reset' to try again.");
+    }
     // Calling the imported grid printer
     printGrid(state);
 }
@@ -147,7 +149,6 @@ async function askMove() {
             askMove();
         }
 
-        askMove();
     });
 }
 

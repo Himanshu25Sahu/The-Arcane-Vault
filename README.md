@@ -29,14 +29,29 @@ Create a simple 2D game world to demonstrate state management:
 
 ## 🚀 Setup & Execution
 
-### Prerequisites
+```bash
+git clone https://github.com/Himanshu25Sahu/The-Arcane-Vault.git  
+cd The-Arcane-Vault
+```
+
+### Option 1: Docker (Easiest / One-Step)
+This is the fastest way to run the game without installing any dependencies locally. It ensures the game runs in the exact environment it was built for.
+
+#### Prerequisites
+- Docker Desktop installed and running
+
+```bash
+# Build and start the game in one command
+docker-compose run --rm --build game
+```
+Note: We use run --rm instead of up to ensure the terminal is fully interactive for game commands and to clean up the container after you quit.
+
+### Option 2: Local Node.js setup
+#### Prerequisites
 - Node.js (v18 or higher)
 - npm
 
-### Installation
 ```bash
-git clone https://github.com/Himanshu25Sahu/The-Arcane-Vault.git  
-cd The-Arcane-Vault  
 npm install  
 ```
 
@@ -49,16 +64,22 @@ npm start
 ```bash
 npm test  
 ```
-
 ---
 
 ## 📁 Project Structure
 ```
-src/
-├── index.ts     # CLI loop and user input handling
-├── engine.ts    # Core game logic and state transitions
-├── types.ts     # State and entity type definitions
-├── ui.ts        # Terminal grid rendering
+.
+├── src/                # TypeScript Source files
+│   ├── index.ts        # CLI loop and user input handling
+│   ├── engine.ts       # Core game logic and state transitions
+│   ├── types.ts        # State and entity type definitions
+│   └── ui.ts           # Terminal grid rendering
+├── tests/              # Vitest unit tests
+├── Dockerfile          # Multi-stage build for optimized image size
+├── docker-compose.yaml # Orchestration for interactive CLI usage
+├── .dockerignore       # Prevents local node_modules/dist from entering image
+├── package.json        # Dependencies and scripts
+└── tsconfig.json       # TypeScript configuration
 ```
 
 ---

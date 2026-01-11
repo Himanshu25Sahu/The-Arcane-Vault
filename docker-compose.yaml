@@ -1,0 +1,8 @@
+services:
+  game:
+    build: .
+    image: arcane-vault:latest
+    container_name: arcane-vault-app
+    
+    stdin_open: true
+    tty: true
